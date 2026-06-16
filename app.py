@@ -3,10 +3,10 @@ import warnings
 import logging
 import streamlit as st
 
-# --- LangChain Imports ---
+# --- LangChain Imports (Production Ready) ---
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings 
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.vectorstores import FAISS
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -174,7 +174,7 @@ def get_vectorstore():
     docs = splitter.split_documents(documents)
 
     embeddings = HuggingFaceEmbeddings(
-        model_name="all-MiniLM-L12-v2"
+        model_name="sentence-transformers/all-MiniLM-L12-v2"
     )
 
     vectorstore = FAISS.from_documents(
@@ -373,7 +373,7 @@ Context:
                         )
                     )
 
-            # Render elements inside the active UI chat block safely
+            # Render elements inside active assistant frame cleanly
             with st.chat_message("assistant"):
                 st.markdown(response_text)
                 
@@ -392,7 +392,7 @@ Context:
                 """
                 st.html(bar_html)
 
-            # Save ONLY text response to history to ensure HTML strings don't leak out on session reload
+            # Save clean text response to memory loop
             st.session_state.messages.append(
                 {
                     "role": "assistant",
