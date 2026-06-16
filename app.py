@@ -3,17 +3,15 @@ import warnings
 import logging
 import streamlit as st
 
-# --- LangChain Imports (v1.x Production Compliant) ---
+# --- Modern LangChain Imports ---
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_huggingface import HuggingFaceEmbeddings 
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.vectorstores import FAISS
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-
-# Modernized architectural layer imports
-from langchain_classic.chains import create_retrieval_chain
-from langchain_classic.chains.combine_documents import create_stuff_documents_chain
+from langchain_core.runnables import RunnablePassthrough
+from langchain_core.output_parsers import StrOutputParser
 
 # -----------------------------
 # CONFIG
@@ -302,33 +300,31 @@ Guidelines:
 
 Context:
 {context}
+
+Question:
+{input}
 """
 
-            prompt_template = ChatPromptTemplate.from_messages(
-                [
-                    ("system", system_prompt),
-                    ("human", "{input}")
-                ]
-            )
+            prompt_template = ChatPromptTemplate.from_template(system_prompt)
 
-            question_answer_chain = create_stuff_documents_chain(
-                llm,
-                prompt_template
-            )
+            # Modern formatting utility to pack retrieved documents into clean string strings
+            def format_docs(docs):
+                return "\n\n".join(doc.page_content for doc in docs)
 
-            rag_chain = create_retrieval_chain(
-                retriever,
-                question_answer_chain
-            )
+            # Retrieve source context blocks manually beforehand for evaluation
+            source_docs = retriever.invoke(prompt)
+            context_string = format_docs(source_docs)
 
-            result = rag_chain.invoke(
+            # Build declarative chain using standard LCEL composition
+            rag_chain = prompt_template | llm | StrOutputParser()
+
+            # Process prediction execution
+            response_text = rag_chain.invoke(
                 {
+                    "context": context_string,
                     "input": prompt
                 }
             )
-
-            response_text = result["answer"]
-            source_docs = result.get("context", [])
 
             # -------------------------
             # MATCH SCORE
@@ -375,7 +371,7 @@ Context:
                         )
                     )
 
-            # Render UI cleanly using st.html
+            # Render HTML elements without saving them in history storage structures
             with st.chat_message("assistant"):
                 st.markdown(response_text)
                 
@@ -394,7 +390,7 @@ Context:
                 """
                 st.html(bar_html)
 
-            # Keep clean memory references
+            # Record conversation safely
             st.session_state.messages.append(
                 {
                     "role": "assistant",
