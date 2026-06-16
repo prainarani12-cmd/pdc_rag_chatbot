@@ -3,15 +3,17 @@ import warnings
 import logging
 import streamlit as st
 
-# --- LangChain Imports (Production Ready) ---
+# --- LangChain Imports (v1.x Production Compliant) ---
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_huggingface import HuggingFaceEmbeddings 
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.vectorstores import FAISS
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain.chains import create_retrieval_chain
-from langchain.chains.combine_documents import create_stuff_documents_chain
+
+# Modernized architectural layer imports
+from langchain_classic.chains import create_retrieval_chain
+from langchain_classic.chains.combine_documents import create_stuff_documents_chain
 
 # -----------------------------
 # CONFIG
@@ -373,7 +375,7 @@ Context:
                         )
                     )
 
-            # Render elements inside active assistant frame cleanly
+            # Render UI cleanly using st.html
             with st.chat_message("assistant"):
                 st.markdown(response_text)
                 
@@ -392,7 +394,7 @@ Context:
                 """
                 st.html(bar_html)
 
-            # Save clean text response to memory loop
+            # Keep clean memory references
             st.session_state.messages.append(
                 {
                     "role": "assistant",
